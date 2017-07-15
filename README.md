@@ -1,5 +1,7 @@
 # CS Relief Map Tile Image Generator
 
+An one stop tile image generator of CS Relief Map written in Python, integrated with [Luigi](https://github.com/spotify/luigi) and [numpy](http://www.numpy.org/).
+
 ## What is CS Relief Map (CS立体図) ?
 
 The "*CS Relief Map*" (CS立体図) is a terrain visualization method with high visibility of **C**urvature and **S**lope. This was proposed by [Nagano prefecture forest center (長野県林業総合センター)](https://www.pref.nagano.lg.jp/ringyosogo/).
@@ -65,3 +67,5 @@ Copyright (c) 2017 Kunihiko Miyoshi
 
  - [国土地理院 標高タイル（基盤地図情報数値標高モデル）](http://maps.gsi.go.jp/development/ichiran.html)
  - [data spec](https://maps.gsi.go.jp/development/demtile.html)
+
+Currently the data downloader is available for Japan only. But this project is easily extendable for any regions, any countries.
