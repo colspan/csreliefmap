@@ -6,6 +6,7 @@ The "CS relief map" is a terrain visualization method with high visibility of sl
 
 This implementation is based on these articles.
 
+ - [曲率と傾斜による立体図法（CS立体図）を用いた地形判読](https://www.jstage.jst.go.jp/article/jjfe/56/2/56_KJ00009647426/_pdf)
  - [数値地形データを用いた「微地形図」の作成方法](http://www.pref.nagano.lg.jp/ringyosogo/seika/documents/bichikei.pdf)
  - [QGISで「CS立体図」の「立体図」を作ってみた](http://koutochas.seesaa.net/article/444171690.html)
 
