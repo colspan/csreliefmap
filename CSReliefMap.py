@@ -240,17 +240,12 @@ class generateImageSlope(luigi.Task):
         if self.abs_filter:
             data = np.abs(data)
 
-        img = Image.new('RGBA', (size_x, size_y), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(img)
         d_max = np.max(data)
         d_min = np.min(data)
         print (d_max, d_min)
-        for img_y in range(0, size_y):
-            for img_x in range(0, size_x):
-                value = data[img_y, img_x]
-                color = self.get_color(value)
-                draw.rectangle(
-                    ((img_x, img_y), (img_x + 1, img_y + 1)), fill=color)
+        colored_data = np.uint8(self.cmapper.to_rgba(data) * 255)
+        colored_data[:, :, 3] = 255
+        img = Image.fromarray(colored_data)
         img.save(self.output().fn, 'PNG')
 
 
