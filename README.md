@@ -2,7 +2,7 @@
 
 ## What is CS Relief Map (CS立体図) ?
 
-The "CS relief map" is a visualization method of slope and curvature. This was proposed by Nagano prefecture forest center [長野県林業総合センター](https://www.pref.nagano.lg.jp/ringyosogo/).
+The "CS relief map" is a terrain visualization method with high visibility of slope and curvature. This was proposed by Nagano prefecture forest center [長野県林業総合センター](https://www.pref.nagano.lg.jp/ringyosogo/).
 
 This implementation is based on these articles.
 
@@ -56,7 +56,7 @@ python CSReliefMap.py generateImageCSReliefMap --x 29139 --y 12936 --z 15 --loca
  
  - [leaflet-areaselect](http://heyman.github.io/leaflet-areaselect/example/)
 
-#### generate by japanese 1-level mesh(1次メッシュ)
+#### generate by japanese level-1 mesh(1次メッシュ)
 
 ```python
 python CSReliefMap.py generateImageByMeshCodes --meshcodes "[6341,6342]" --zoom 14 --workers 4 --local-scheduler
@@ -75,7 +75,7 @@ Copyright (c) 2017 Kunihiko Miyoshi
 
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
 
-### Elevation data
+### Elevation data source
 
-[国土地理院 標高タイル（基盤地図情報数値標高モデル）](http://maps.gsi.go.jp/development/ichiran.html)
-
+ - [国土地理院 標高タイル（基盤地図情報数値標高モデル）](http://maps.gsi.go.jp/development/ichiran.html)
+ - [data spec](https://maps.gsi.go.jp/development/demtile.html)
