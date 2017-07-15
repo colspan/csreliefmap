@@ -185,7 +185,7 @@ class calcDemCurvature(calcDemSlope):
         def curvature(a, x, y):
             p = dz_dx(a, x, y)**2 + dz_dy(a, x, y)**2
             q = p + 1
-            return (dzdz_dxdx(a, x, y) * (dz_dx(a, x, y)**2) + 2 * dzdz_dxdy(a, x, y) * dz_dx(a, x, y) * dz_dy(a, x, y) + dzdz_dydy(a, x, y) * (dz_dy(a, x, y)**2)) / (p * q**1.5)
+            return (dzdz_dxdx(a, x, y) * (dz_dx(a, x, y)**2) + 2 * dzdz_dxdy(a, x, y) * dz_dx(a, x, y) * dz_dy(a, x, y) + dzdz_dydy(a, x, y) * (dz_dy(a, x, y)**2)) / (p * q**1.5 + 1)
 
         combined_tile = np.nan_to_num(self._combine_tiles())
         cur = np.empty((256, 256))
@@ -203,7 +203,7 @@ class generateImageSlope(luigi.Task):
     z = luigi.IntParameter()
     folder_name = "demSlope"
     cmap_name = "Blues"
-    cmap_range = [-6, 6]
+    cmap_range = [-70, 70]
 
     def __init__(self, *args, **kwargs):
         super(generateImageSlope, self).__init__(*args, **kwargs)
@@ -211,7 +211,7 @@ class generateImageSlope(luigi.Task):
 
     def get_color_mapper(self):
         cmapper = cm.ScalarMappable(norm=colors.Normalize(
-            vmin=min(self.cmap_range), vmax=max(self.cmap_range)), cmap=plt.get_cmap(self.cmap_name))
+            vmin=min(self.cmap_range), vmax=max(self.cmap_range), clip=True), cmap=plt.get_cmap(self.cmap_name))
         return cmapper
 
     def output(self):
@@ -254,7 +254,12 @@ class generateImageSlope(luigi.Task):
 class generateImageCurvature(generateImageSlope):
     folder_name = "demCurvature"
     cmap_name = "Reds"
-    cmap_range = [-3, 3]
+    cmap_range = [-150, 150]
+
+    def get_color_mapper(self):
+        cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.015, linscale=0.03,
+                                                           vmin=min(self.cmap_range), vmax=max(self.cmap_range), clip=True), cmap=plt.get_cmap(self.cmap_name))
+        return cmapper
 
     def requires(self):
         return calcDemCurvature(x=self.x, y=self.y, z=self.z)
@@ -268,8 +273,8 @@ class generateImageCSReliefMap(luigi.Task):
 
     def requires(self):
         return [
+            generateImageSlope(x=self.x, y=self.y, z=self.z),
             generateImageCurvature(x=self.x, y=self.y, z=self.z),
-            generateImageSlope(x=self.x, y=self.y, z=self.z)
         ]
 
     def output(self):
