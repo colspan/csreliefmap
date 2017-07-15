@@ -211,7 +211,7 @@ class generateImageSlope(luigi.Task):
 
     def get_color_mapper(self):
         cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
-            vmin=min(self.cmap_range), vmax=max(self.cmap_range), clip=True), cmap=plt.get_cmap(self.cmap_name))
+                                                           vmin=min(self.cmap_range), vmax=max(self.cmap_range), clip=True), cmap=plt.get_cmap(self.cmap_name))
         return cmapper
 
     def output(self):
@@ -247,7 +247,7 @@ class generateImageSlope(luigi.Task):
         print (d_max, d_min)
         for img_y in range(0, size_y):
             for img_x in range(0, size_x):
-                value = data[img_x, img_y]
+                value = data[size_x - 1 - img_x, size_y - 1 - img_y]
                 color = self.get_color(value)
                 draw.rectangle(
                     ((img_x, img_y), (img_x + 1, img_y + 1)), fill=color)
