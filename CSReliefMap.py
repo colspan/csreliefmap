@@ -2,17 +2,21 @@
 # -*- coding: utf-8 -*-
 
 """
-Map Tile Downloader based on Luigi
+CS Relief Map Tile Image Generator
+this implementation is based on http://koutochas.seesaa.net/article/444171690.html
 """
 
 from urlparse import urlparse
 import os
 from math import cos, tan, radians, pi, log
+from colorsys import hls_to_rgb
 
+import requests
 import numpy as np
+from PIL import Image, ImageDraw, ImageChops
+from matplotlib import pyplot as plt, cm, colors
 
 import luigi
-import requests
 
 
 def deg_to_num(lat_deg, lon_deg, zoom):
@@ -66,19 +70,34 @@ class DownloadTile(luigi.Task):
                 f_out.write(chunk)
 
 
-class loadDem5b(DownloadTile):
-    baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem5b/{z}/{x}/{y}.txt"
-    baseName = "dem5b"
+class loadDem(DownloadTile):
+    """
+    標高タイル（基盤地図情報数値標高モデル）
+    https://maps.gsi.go.jp/development/ichiran.html
+    """
+    baseName = "dem"
+    baseUrl = None
+
+    def __init__(self, *args, **kwargs):
+        super(loadDem, self).__init__(*args, **kwargs)
+        if self.z == 15:
+            # 15
+            self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem5b/{z}/{x}/{y}.txt"
+        elif 0 <= self.z <= 14:
+            # 0-14
+            self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem/{z}/{x}/{y}.txt"
+        else:
+            raise
 
 
-class calcDem5bSlope(luigi.Task):
+class calcDemSlope(luigi.Task):
     # http://www.spatialanalysisonline.com/HTML/index.html?profiles_and_curvature.htm
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
-    xRange = luigi.ListParameter(default=[29000, 30000])
-    yRange = luigi.ListParameter(default=[12000, 13000])
-    folderName = "dem5bSlope"
+    xRange = luigi.ListParameter(default=[-1, 1000000000])
+    yRange = luigi.ListParameter(default=[-1, 1000000000])
+    folder_name = "demSlope"
 
     def requires(self):
         def chooseTask(x, y):
@@ -86,7 +105,7 @@ class calcDem5bSlope(luigi.Task):
                 return None
             if(y < min(self.yRange) or y >= max(self.yRange)):
                 return None
-            return loadDem5b(x=x, y=y, z=self.z)
+            return loadDem(x=x, y=y, z=self.z)
         self.taskList = [
             [chooseTask(x=self.x - 1, y=self.y - 1),
              chooseTask(x=self.x, y=self.y - 1),
@@ -105,7 +124,7 @@ class calcDem5bSlope(luigi.Task):
         define output
         """
         output_file = "./var/{}/{}/{}/{}.{}".format(
-            self.folderName,
+            self.folder_name,
             self.z,
             self.x,
             self.y,
@@ -142,10 +161,11 @@ class calcDem5bSlope(luigi.Task):
             np.savetxt(output_f, grd)
 
 
-class calcDem5bCurvature(calcDem5bSlope):
-    folderName = "dem5bCurvature"
+class calcDemCurvature(calcDemSlope):
+    folder_name = "demCurvature"
 
     def run(self):
+        # http://www.spatialanalysisonline.com/HTML/index.html?profiles_and_curvature.htm
         def dz_dx(a, x, y):
             return (a[x + 1, y] - a[x - 1, y]) / 2
 
@@ -167,36 +187,36 @@ class calcDem5bCurvature(calcDem5bSlope):
             q = p + 1
             return (dzdz_dxdx(a, x, y) * (dz_dx(a, x, y)**2) + 2 * dzdz_dxdy(a, x, y) * dz_dx(a, x, y) * dz_dy(a, x, y) + dzdz_dydy(a, x, y) * (dz_dy(a, x, y)**2)) / (p * q**1.5)
 
-        combinedTile = np.nan_to_num(self._combine_tiles())
+        combined_tile = np.nan_to_num(self._combine_tiles())
         cur = np.empty((256, 256))
         for i in range(256):
             for j in range(256):
-                cur[i, j] = curvature(combinedTile, 256 + i, 256 + j)
+                cur[i, j] = curvature(combined_tile, 256 + i, 256 + j)
 
         with self.output().open("w") as output_f:
             np.savetxt(output_f, np.nan_to_num(cur))
 
 
-from PIL import Image, ImageDraw, ImageFont
-from colorsys import hls_to_rgb
+class generateImageSlope(luigi.Task):
+    x = luigi.IntParameter()
+    y = luigi.IntParameter()
+    z = luigi.IntParameter()
+    folder_name = "demSlope"
+    cmap_name = "Blues"
+    cmap_range = [-6, 6]
 
+    def __init__(self, *args, **kwargs):
+        super(generateImageSlope, self).__init__(*args, **kwargs)
+        self.cmapper = self.get_color_mapper()
 
-def get_color(value):
-    color = (int(value),)*3 + (255,)
-    #color = tuple([int(255 * x) for x in list(hls_to_rgb(float(hsl_hue) /
-    #                                                     360, 1.0, 1.0))]) + (int(255),)
-    return color
-
-
-class generateTileImage(luigi.Task):
-    x = luigi.Parameter()
-    y = luigi.Parameter()
-    z = luigi.Parameter()
-    folderName = "dem5bCurvature"  # luigi.Parameter()
+    def get_color_mapper(self):
+        cmapper = cm.ScalarMappable(norm=colors.Normalize(
+            vmin=min(self.cmap_range), vmax=max(self.cmap_range)), cmap=plt.get_cmap(self.cmap_name))
+        return cmapper
 
     def output(self):
         output_file = "./var/{}/{}/{}/{}.{}".format(
-            self.folderName,
+            self.folder_name,
             self.z,
             self.x,
             self.y,
@@ -205,12 +225,13 @@ class generateTileImage(luigi.Task):
         return luigi.LocalTarget(output_file)
 
     def requires(self):
-        return calcDem5bCurvature(x=self.x, y=self.y, z=self.z)
+        return calcDemSlope(x=self.x, y=self.y, z=self.z)
+
+    def get_color(self, value):
+        color = self.cmapper.to_rgba(value)
+        return tuple([int(256 * x) for x in color])
 
     def run(self):
-        tile_x = self.x
-        tile_y = self.y
-        zoom = self.z
         size_x, size_y = (256, 256)
 
         with self.input().open("r") as input_f:
@@ -220,17 +241,60 @@ class generateTileImage(luigi.Task):
         draw = ImageDraw.Draw(img)
         d_max = np.max(data)
         d_min = np.min(data)
-        data = (data - d_min) * 255 / (d_max - d_min)
+        print (d_max, d_min)
         for img_y in range(0, size_y):
             for img_x in range(0, size_x):
                 value = data[img_x, img_y]
-                color = get_color(value)
+                color = self.get_color(value)
                 draw.rectangle(
                     ((img_x, img_y), (img_x + 1, img_y + 1)), fill=color)
         img.save(self.output().fn, 'PNG')
 
 
-class calcDem5bSlopeBounds(luigi.WrapperTask):
+class generateImageCurvature(generateImageSlope):
+    folder_name = "demCurvature"
+    cmap_name = "Reds"
+    cmap_range = [-3, 3]
+
+    def requires(self):
+        return calcDemCurvature(x=self.x, y=self.y, z=self.z)
+
+
+class generateImageCSReliefMap(luigi.Task):
+    x = luigi.IntParameter()
+    y = luigi.IntParameter()
+    z = luigi.IntParameter()
+    folder_name = "CSReliefMap"
+
+    def requires(self):
+        return [
+            generateImageCurvature(x=self.x, y=self.y, z=self.z),
+            generateImageSlope(x=self.x, y=self.y, z=self.z)
+        ]
+
+    def output(self):
+        output_file = "./var/{}/{}/{}/{}.{}".format(
+            self.folder_name,
+            self.z,
+            self.x,
+            self.y,
+            "png"
+        )
+        return luigi.LocalTarget(output_file)
+
+    def run(self):
+        size_x, size_y = (256, 256)
+
+        output_img = Image.new('RGBA', (size_x, size_y), (255, 255, 255, 255))
+        for source in self.input():
+            input_img = Image.open(source.fn)
+            output_img = ImageChops.multiply(output_img, input_img)
+
+        with self.output().open("wb") as output_f:
+            output_img.save(output_f, 'PNG')
+
+
+class generateImageBounds(luigi.WrapperTask):
     """
     Schedule Download Tasks
     """
@@ -239,45 +303,28 @@ class calcDem5bSlopeBounds(luigi.WrapperTask):
     south = luigi.FloatParameter()
     east = luigi.FloatParameter()
     zoom = luigi.IntParameter()
+    targetTask = luigi.TaskParameter(default=generateImageCSReliefMap)
 
     def requires(self):
         """
         scheduling tasks
         """
+
+        candidateTasks = [generateImageCSReliefMap,
+                          generateImageCurvature, generateImageSlope]
+        if not self.targetTask in candidateTasks:
+            raise
+
         edge_nw_x, edge_nw_y, _, _ = deg_to_num(
             self.north, self.west, self.zoom)
         edge_se_x, edge_se_y, _, _ = deg_to_num(
             self.south, self.east, self.zoom)
+        #xRange = [edge_nw_x, edge_se_x]
+        #yRange = [edge_nw_y, edge_se_y]
         print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
         for tile_x in range(edge_nw_x, edge_se_x + 1):
             for tile_y in range(edge_nw_y, edge_se_y + 1):
-                print "scheduling z:{} x:{} y:{}".format(self.zoom, tile_x, tile_y)
-                yield calcDem5bSlope(x=tile_x, y=tile_y, z=self.zoom, xRange=[edge_nw_x, edge_se_x], yRange=[edge_nw_y, edge_se_y])
-
-
-class calcDem5bCurvatureBounds(luigi.WrapperTask):
-    """
-    Schedule Download Tasks
-    """
-    west = luigi.FloatParameter()
-    north = luigi.FloatParameter()
-    south = luigi.FloatParameter()
-    east = luigi.FloatParameter()
-    zoom = luigi.IntParameter()
-
-    def requires(self):
-        """
-        scheduling tasks
-        """
-        edge_nw_x, edge_nw_y, _, _ = deg_to_num(
-            self.north, self.west, self.zoom)
-        edge_se_x, edge_se_y, _, _ = deg_to_num(
-            self.south, self.east, self.zoom)
-        print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
-        for tile_x in range(edge_nw_x, edge_se_x + 1):
-            for tile_y in range(edge_nw_y, edge_se_y + 1):
-                print "scheduling z:{} x:{} y:{}".format(self.zoom, tile_x, tile_y)
-                yield calcDem5bCurvature(tile_x, tile_y, self.zoom, [edge_nw_x, edge_se_x], [edge_nw_y, edge_se_y])
+                yield self.targetTask(x=tile_x, y=tile_y, z=self.zoom)
 
 
 if __name__ == "__main__":

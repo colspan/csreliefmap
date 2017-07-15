@@ -1,0 +1,6 @@
+pwd
+requests
+luigi
+pillow
+colormap
+matplotlib
