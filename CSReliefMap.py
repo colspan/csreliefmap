@@ -127,7 +127,7 @@ class calcDemSlope(luigi.Task):
             self.z,
             self.x,
             self.y,
-            "gz"
+            "npy"
         )
         return luigi.LocalTarget(output_file)
 
@@ -157,7 +157,7 @@ class calcDemSlope(luigi.Task):
         grd = np.gradient(np.nan_to_num(combinedTile))[
             0][256:256 * 2, 256:256 * 2]
         with self.output().open("w") as output_f:
-            np.savetxt(output_f, grd)
+            np.save(output_f, grd)
 
 
 class calcDemCurvature(calcDemSlope):
@@ -193,7 +193,7 @@ class calcDemCurvature(calcDemSlope):
                 cur[i, j] = curvature(combined_tile, 256 + i, 256 + j)
 
         with self.output().open("w") as output_f:
-            np.savetxt(output_f, np.nan_to_num(cur))
+            np.save(output_f, np.nan_to_num(cur))
 
 
 class generateImageSlope(luigi.Task):
@@ -235,7 +235,7 @@ class generateImageSlope(luigi.Task):
         size_x, size_y = (256, 256)
 
         with self.input().open("r") as input_f:
-            data = np.loadtxt(input_f)
+            data = np.load(input_f)
 
         if self.abs_filter:
             data = np.abs(data)
