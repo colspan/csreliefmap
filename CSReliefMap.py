@@ -3,7 +3,6 @@
 
 """
 CS Relief Map Tile Image Generator
-this implementation is based on http://koutochas.seesaa.net/article/444171690.html
 """
 
 from urlparse import urlparse
