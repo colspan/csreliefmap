@@ -85,8 +85,7 @@ class loadDem(DownloadTile):
             # 0-14
             self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem/{z}/{x}/{y}.txt"
         else:
-            try:
-                raise
+            raise
 
 
 class calcDemSlope(luigi.Task):
