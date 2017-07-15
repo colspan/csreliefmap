@@ -201,7 +201,7 @@ class generateImageSlope(luigi.Task):
     y = luigi.IntParameter()
     z = luigi.IntParameter()
     folder_name = "demSlope"
-    cmap_name = "Blues"
+    cmap_name = "Reds"
     cmap_range = [0, 70]
     abs_filter = True
 
@@ -256,7 +256,7 @@ class generateImageSlope(luigi.Task):
 
 class generateImageCurvature(generateImageSlope):
     folder_name = "demCurvature"
-    cmap_name = "Reds"
+    cmap_name = "Blues"
     cmap_range = [-150, 150]
     abs_filter = False
 
