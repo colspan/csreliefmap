@@ -81,7 +81,7 @@ class loadDem(DownloadTile):
         super(loadDem, self).__init__(*args, **kwargs)
         if self.z == 15:
             # 15
-            self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem5b/{z}/{x}/{y}.txt"
+            self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem5a/{z}/{x}/{y}.txt"
         elif 0 <= self.z <= 14:
             # 0-14
             self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem/{z}/{x}/{y}.txt"
