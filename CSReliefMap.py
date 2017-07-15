@@ -247,7 +247,7 @@ class generateImageSlope(luigi.Task):
         print (d_max, d_min)
         for img_y in range(0, size_y):
             for img_x in range(0, size_x):
-                value = data[size_x - 1 - img_x, size_y - 1 - img_y]
+                value = data[img_y, img_x]
                 color = self.get_color(value)
                 draw.rectangle(
                     ((img_x, img_y), (img_x + 1, img_y + 1)), fill=color)
