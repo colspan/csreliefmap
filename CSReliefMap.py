@@ -332,8 +332,8 @@ class generateImageByBounds(luigi.WrapperTask):
 
 
 def meshcode_to_latlng(meshcode):
-    latitude = (float(meshcode[0:2]) / 1.5) * 1.0 / 8.0 / 1.5
-    longtitude = (float(meshcode[2:4]) + 100.0) * 1.0 / 8.0
+    latitude = (float(meshcode[0:2]) / 1.5)
+    longtitude = (float(meshcode[2:4]) + 100.0)
     return (latitude, longtitude)
 
 
