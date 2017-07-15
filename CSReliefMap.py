@@ -316,7 +316,7 @@ class generateImageByBounds(luigi.WrapperTask):
         candidateTasks = [generateImageCSReliefMap,
                           generateImageCurvature, generateImageSlope]
         if not self.targetTask in candidateTasks:
-            return None
+            raise
 
         edge_nw_x, edge_nw_y, _, _ = deg_to_num(
             self.north, self.west, self.zoom)
