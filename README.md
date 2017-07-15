@@ -2,13 +2,12 @@
 
 ## What is CS Relief Map (CS立体図) ?
 
-by Nagano prefecture forest center [長野県林業総合センター](https://www.pref.nagano.lg.jp/ringyosogo/)
+The "CS relief map" is a visualization method of slope and curvature. This was proposed by Nagano prefecture forest center [長野県林業総合センター](https://www.pref.nagano.lg.jp/ringyosogo/).
 
-this implementation is based on these articles
+This implementation is based on these articles.
 
  - [数値地形データを用いた「微地形図」の作成方法](http://www.pref.nagano.lg.jp/ringyosogo/seika/documents/bichikei.pdf)
  - [QGISで「CS立体図」の「立体図」を作ってみた](http://koutochas.seesaa.net/article/444171690.html)
-
 
 ### Setup
 
@@ -60,7 +59,7 @@ python CSReliefMap.py generateImageCSReliefMap --x 29139 --y 12936 --z 15 --loca
 #### generate by japanese 1-level mesh(1次メッシュ)
 
 ```python
-python CSReliefMap.py generateImageByMeshCodes --meshcodes "[6341,6342]"
+python CSReliefMap.py generateImageByMeshCodes --meshcodes "[6341,6342]" --zoom 14 --workers 4 --local-scheduler
 ```
 
 #### generated result
