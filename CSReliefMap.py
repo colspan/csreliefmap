@@ -8,11 +8,10 @@ CS Relief Map Tile Image Generator
 from urlparse import urlparse
 import os
 from math import cos, tan, radians, pi, log
-from colorsys import hls_to_rgb
 
 import requests
 import numpy as np
-from PIL import Image, ImageDraw, ImageChops
+from PIL import Image, ImageChops
 from matplotlib import pyplot as plt, cm, colors
 
 import luigi
@@ -86,7 +85,8 @@ class loadDem(DownloadTile):
             # 0-14
             self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem/{z}/{x}/{y}.txt"
         else:
-            raise
+            try:
+                raise
 
 
 class calcDemSlope(luigi.Task):
@@ -317,7 +317,7 @@ class generateImageByBounds(luigi.WrapperTask):
         candidateTasks = [generateImageCSReliefMap,
                           generateImageCurvature, generateImageSlope]
         if not self.targetTask in candidateTasks:
-            raise
+            return None
 
         edge_nw_x, edge_nw_y, _, _ = deg_to_num(
             self.north, self.west, self.zoom)
