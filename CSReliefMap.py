@@ -203,14 +203,15 @@ class generateImageSlope(luigi.Task):
     z = luigi.IntParameter()
     folder_name = "demSlope"
     cmap_name = "Blues"
-    cmap_range = [-70, 70]
+    cmap_range = [0, 70]
+    abs_filter = True
 
     def __init__(self, *args, **kwargs):
         super(generateImageSlope, self).__init__(*args, **kwargs)
         self.cmapper = self.get_color_mapper()
 
     def get_color_mapper(self):
-        cmapper = cm.ScalarMappable(norm=colors.Normalize(
+        cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
             vmin=min(self.cmap_range), vmax=max(self.cmap_range), clip=True), cmap=plt.get_cmap(self.cmap_name))
         return cmapper
 
@@ -237,6 +238,9 @@ class generateImageSlope(luigi.Task):
         with self.input().open("r") as input_f:
             data = np.loadtxt(input_f)
 
+        if self.abs_filter:
+            data = np.abs(data)
+
         img = Image.new('RGBA', (size_x, size_y), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         d_max = np.max(data)
@@ -255,6 +259,7 @@ class generateImageCurvature(generateImageSlope):
     folder_name = "demCurvature"
     cmap_name = "Reds"
     cmap_range = [-150, 150]
+    abs_filter = False
 
     def get_color_mapper(self):
         cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.015, linscale=0.03,
