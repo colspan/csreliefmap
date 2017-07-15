@@ -127,7 +127,7 @@ class calcDemSlope(luigi.Task):
             self.z,
             self.x,
             self.y,
-            "txt"
+            "txt.gz"
         )
         return luigi.LocalTarget(output_file)
 
