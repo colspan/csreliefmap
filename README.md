@@ -2,7 +2,7 @@
 
 ## What is CS Relief Map (CS立体図) ?
 
-The "CS relief map" is a terrain visualization method with high visibility of slope and curvature. This was proposed by Nagano prefecture forest center [長野県林業総合センター](https://www.pref.nagano.lg.jp/ringyosogo/).
+The "*CS Relief Map*" (CS立体図) is a terrain visualization method with high visibility of **C**urvature and **S**lope. This was proposed by [Nagano prefecture forest center (長野県林業総合センター)](https://www.pref.nagano.lg.jp/ringyosogo/).
 
 This implementation is based on these articles.
 
