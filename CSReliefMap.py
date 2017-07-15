@@ -298,7 +298,7 @@ class generateImageCSReliefMap(luigi.Task):
             output_img.save(output_f, 'PNG')
 
 
-class generateImageBounds(luigi.WrapperTask):
+class generateImageByBounds(luigi.WrapperTask):
     """
     Schedule Download Tasks
     """
@@ -323,12 +323,34 @@ class generateImageBounds(luigi.WrapperTask):
             self.north, self.west, self.zoom)
         edge_se_x, edge_se_y, _, _ = deg_to_num(
             self.south, self.east, self.zoom)
-        #xRange = [edge_nw_x, edge_se_x]
-        #yRange = [edge_nw_y, edge_se_y]
+        # xRange = [edge_nw_x, edge_se_x]
+        # yRange = [edge_nw_y, edge_se_y]
         print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
         for tile_x in range(edge_nw_x, edge_se_x + 1):
             for tile_y in range(edge_nw_y, edge_se_y + 1):
                 yield self.targetTask(x=tile_x, y=tile_y, z=self.zoom)
+
+
+def meshcode_to_latlng(meshcode):
+    latitude = (float(meshcode[0:2]) / 1.5) * 1.0 / 8.0 / 1.5
+    longtitude = (float(meshcode[2:4]) + 100.0) * 1.0 / 8.0
+    return (latitude, longtitude)
+
+
+class generateImageByMeshCodes(luigi.WrapperTask):
+    """
+    Schedule Download Tasks
+    """
+    meshcodes = luigi.ListParameter()
+    zoom = luigi.IntParameter()
+
+    def requires(self):
+        for meshcode in self.meshcodes:
+            meshcode = str(meshcode)
+            south, west = meshcode_to_latlng(meshcode)
+            north, east = meshcode_to_latlng("{:02d}{:02d}".format(
+                int(meshcode[0:2]) + 1, int(meshcode[2:4]) + 1))
+            yield generateImageByBounds(west=west, north=north, east=east, south=south, zoom=self.zoom)
 
 
 if __name__ == "__main__":
