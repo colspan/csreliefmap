@@ -405,8 +405,8 @@ class generateImageByBounds(luigi.WrapperTask):
         # xRange = [edge_nw_x, edge_se_x]
         # yRange = [edge_nw_y, edge_se_y]
         print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
-        for tile_x in range(edge_nw_x, edge_se_x + 1):
-            for tile_y in range(edge_nw_y, edge_se_y + 1):
+        for tile_x in range(edge_nw_x, edge_se_x + 1 + 10):
+            for tile_y in range(edge_nw_y, edge_se_y + 1 + 10):
                 yield self.targetTask(x=tile_x, y=tile_y, z=self.zoom)
 
 
