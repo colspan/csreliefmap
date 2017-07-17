@@ -436,8 +436,8 @@ class generateResizedImageByBounds(luigi.WrapperTask):
         edge_se_x, edge_se_y, _, _ = deg_to_num(
             self.south, self.east, self.zoom)
         print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
-        for tile_x in range(edge_nw_x, edge_se_x + 1):
-            for tile_y in range(edge_nw_y, edge_se_y + 1):
+        for tile_x in range(edge_nw_x, edge_se_x + 1 + 10):
+            for tile_y in range(edge_nw_y, edge_se_y + 1 + 10):
                 yield resizeTileImage(x=tile_x, y=tile_y, z=self.zoom, sourceTask=self.targetTask, ignore_no_image=self.ignore_no_image, fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceZ=self.sourceZoom)
 
 
