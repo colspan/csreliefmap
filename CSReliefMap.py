@@ -11,6 +11,7 @@ from math import cos, tan, radians, pi, log
 
 import requests
 import numpy as np
+import scipy.ndimage
 from PIL import Image, ImageChops
 from matplotlib import pyplot as plt, cm, colors
 
@@ -297,6 +298,85 @@ class generateImageCSReliefMap(luigi.Task):
             output_img.save(output_f, 'PNG')
 
 
+class resizeTileImage(luigi.Task):
+    x = luigi.IntParameter()
+    y = luigi.IntParameter()
+    z = luigi.IntParameter()
+    ignore_no_image = luigi.BoolParameter(default=False)
+    fill_image = luigi.Parameter(default=None)
+    max_search_z = luigi.IntParameter(default=14)
+    folder_name = luigi.Parameter(default="resized")
+    sourceZ = luigi.IntParameter()
+    sourceTask = luigi.TaskParameter(default=generateImageCSReliefMap)
+
+    def requires(self):
+        def chooseTask(x, y, z):
+            if z == self.sourceZ:
+                return self.sourceTask(x=x, y=y, z=z)
+            else:
+                return resizeTileImage(x=x, y=y, z=z, ignore_no_image=self.ignore_no_image, fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceTask=self.sourceTask, sourceZ=self.sourceZ)
+
+        x = self.x * 2
+        y = self.y * 2
+        z = self.z + 1
+        self.task_list = [
+            [chooseTask(x=x - 1, y=y - 1, z=z),
+             chooseTask(x=x, y=y - 1, z=z),
+             chooseTask(x=x + 1, y=y - 1, z=z),
+             chooseTask(x=x + 2, y=y - 1, z=z)],
+            [chooseTask(x=x - 1, y=y, z=z),
+             chooseTask(x=x, y=y, z=z),
+             chooseTask(x=x + 1, y=y, z=z),
+             chooseTask(x=x + 2, y=y, z=z)],
+            [chooseTask(x=x - 1, y=y + 1, z=z),
+             chooseTask(x=x, y=y + 1, z=z),
+             chooseTask(x=x + 1, y=y + 1, z=z),
+             chooseTask(x=x + 2, y=y + 1, z=z)],
+            [chooseTask(x=x - 1, y=y + 2, z=z),
+             chooseTask(x=x, y=y + 2, z=z),
+             chooseTask(x=x + 1, y=y + 2, z=z),
+             chooseTask(x=x + 2, y=y + 2, z=z)]
+        ]
+        if self.ignore_no_image or self.max_search_z < z:
+            return None
+        else:
+            return filter(lambda x: x != None, self.task_list)
+
+    def output(self):
+        """
+        define output
+        """
+        output_file = "./var/{}/{}/{}/{}.{}".format(
+            self.folder_name,
+            self.z,
+            self.x,
+            self.y,
+            "png"
+        )
+        return luigi.LocalTarget(output_file)
+
+    def _combine_tiles(self):
+        combined_tile = Image.new(
+            'RGBA', (256 * 4, 256 * 4), (255, 255, 255, 255))
+        for i in range(4):
+            for j in range(4):
+                target = self.task_list[i][j]
+                if(self.ignore_no_image and not target.complete()):
+                    input_img = Image.open(self.fill_image)
+                else:
+                    input_img = Image.open(target.output().fn)
+
+                combined_tile.paste(input_img, (256 * j, 256 * i))
+        return combined_tile
+
+    def run(self):
+        combined_tile = self._combine_tiles()
+        combined_tile.thumbnail((512, 512), Image.ANTIALIAS)
+        cropped_image = combined_tile.crop((128, 128, 384, 384))
+        with self.output().open("wb") as output_f:
+            cropped_image.save(output_f, 'PNG')
+
+
 class generateImageByBounds(luigi.WrapperTask):
     """
     Schedule Download Tasks
@@ -328,6 +408,37 @@ class generateImageByBounds(luigi.WrapperTask):
         for tile_x in range(edge_nw_x, edge_se_x + 1):
             for tile_y in range(edge_nw_y, edge_se_y + 1):
                 yield self.targetTask(x=tile_x, y=tile_y, z=self.zoom)
+
+
+class generateResizedImageByBounds(luigi.WrapperTask):
+    """
+    Schedule Download Tasks
+    """
+    west = luigi.FloatParameter()
+    north = luigi.FloatParameter()
+    south = luigi.FloatParameter()
+    east = luigi.FloatParameter()
+    zoom = luigi.IntParameter()
+    targetTask = luigi.TaskParameter(default=generateImageCSReliefMap)
+    ignore_no_image = luigi.BoolParameter(default=False)
+    fill_image = luigi.Parameter(default=None)
+    max_search_z = luigi.IntParameter(default=14)
+    folder_name = luigi.Parameter(default="resized")
+    sourceZoom = luigi.IntParameter(default=14)
+
+    def requires(self):
+        """
+        scheduling tasks
+        """
+
+        edge_nw_x, edge_nw_y, _, _ = deg_to_num(
+            self.north, self.west, self.zoom)
+        edge_se_x, edge_se_y, _, _ = deg_to_num(
+            self.south, self.east, self.zoom)
+        print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
+        for tile_x in range(edge_nw_x, edge_se_x + 1):
+            for tile_y in range(edge_nw_y, edge_se_y + 1):
+                yield resizeTileImage(x=tile_x, y=tile_y, z=self.zoom, targetTask=self.targetTask, ignore_no_image=self.ignore_no_image, , fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceZoom=self.sourceZoom)
 
 
 def meshcode_to_latlng(meshcode):

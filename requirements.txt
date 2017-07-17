@@ -4,3 +4,5 @@ luigi
 pillow
 colormap
 matplotlib
+numpy
+scipy

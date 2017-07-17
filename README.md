@@ -40,6 +40,17 @@ python CSReliefMap.py generateImageCSReliefMap --x 29139 --y 12936 --z 15 --loca
 
 ```
 
+##### Resizing large image to small image  (experimental)
+```python
+# single tile
+python CSReliefMap.py resizeTileImage --x 3641 --y 1616 --z 12 --sourceZ 14 --sourceTask generateImageCSReliefMap --workers 4 --local-scheduler 
+
+# around Tokyo
+python CSReliefMap.py generateResizedImageByBounds --west 139.559326171875 --north 35.77994251888403 --south 35.36217605914681 --east 140.2569580078125 --zoom 10 --workers 4 --local-scheduler
+
+
+```
+
 ##### Utility for coordinate picking
  
  - [leaflet-areaselect](http://heyman.github.io/leaflet-areaselect/example/)
