@@ -59,6 +59,11 @@ python CSReliefMap.py generateResizedImageByBounds --west 139.559326171875 --nor
 
 ```python
 python CSReliefMap.py generateImageByMeshCodes --meshcodes "[6341,6342]" --zoom 14 --workers 4 --local-scheduler
+
+# resized tile map based on zoom 14 (experimental)
+python CSReliefMap.py generateImageByMeshCodes --targetTask generateResizedImageByBounds --meshcodes "[6341,6342]" --zoom 10 --workers 4 --local-scheduler
+
+
 ```
 
 #### generated result

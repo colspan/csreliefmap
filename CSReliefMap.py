@@ -453,6 +453,7 @@ class generateImageByMeshCodes(luigi.WrapperTask):
     """
     meshcodes = luigi.ListParameter()
     zoom = luigi.IntParameter()
+    targetTask = luigi.TaskParameter(default=generateImageByBounds)
 
     def requires(self):
         for meshcode in self.meshcodes:
@@ -460,7 +461,7 @@ class generateImageByMeshCodes(luigi.WrapperTask):
             south, west = meshcode_to_latlng(meshcode)
             north, east = meshcode_to_latlng("{:02d}{:02d}".format(
                 int(meshcode[0:2]) + 1, int(meshcode[2:4]) + 1))
-            yield generateImageByBounds(west=west, north=north, east=east + 0.1, south=south + 0.1, zoom=self.zoom)
+            yield self.targetTask(west=west, north=north, east=east + 0.1, south=south + 0.1, zoom=self.zoom)
 
 
 if __name__ == "__main__":
