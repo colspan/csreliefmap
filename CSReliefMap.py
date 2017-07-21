@@ -405,8 +405,8 @@ class generateImageByBounds(luigi.WrapperTask):
         # xRange = [edge_nw_x, edge_se_x]
         # yRange = [edge_nw_y, edge_se_y]
         print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
-        for tile_x in range(edge_nw_x - 1, edge_se_x + 1 + 3):
-            for tile_y in range(edge_nw_y - 1, edge_se_y + 1 + 3):
+        for tile_x in range(edge_nw_x - 3, edge_se_x + 3):
+            for tile_y in range(edge_nw_y - 3, edge_se_y + 3):
                 yield self.targetTask(x=tile_x, y=tile_y, z=self.zoom)
 
 
@@ -436,8 +436,8 @@ class generateResizedImageByBounds(luigi.WrapperTask):
         edge_se_x, edge_se_y, _, _ = deg_to_num(
             self.south, self.east, self.zoom)
         print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
-        for tile_x in range(edge_nw_x, edge_se_x + 1 + 10):
-            for tile_y in range(edge_nw_y, edge_se_y + 1 + 10):
+        for tile_x in range(edge_nw_x - 3, edge_se_x + 3):
+            for tile_y in range(edge_nw_y - 3, edge_se_y + 3):
                 yield resizeTileImage(x=tile_x, y=tile_y, z=self.zoom, sourceTask=self.targetTask, ignore_no_image=self.ignore_no_image, fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceZ=self.sourceZoom)
 
 
@@ -461,7 +461,7 @@ class generateImageByMeshCodes(luigi.WrapperTask):
             south, west = meshcode_to_latlng(meshcode)
             north, east = meshcode_to_latlng("{:02d}{:02d}".format(
                 int(meshcode[0:2]) + 1, int(meshcode[2:4]) + 1))
-            yield self.targetTask(west=west, north=north, east=east + 0.1, south=south + 0.1, zoom=self.zoom)
+            yield self.targetTask(west=west, north=north, east=east, south=south, zoom=self.zoom)
 
 
 if __name__ == "__main__":
