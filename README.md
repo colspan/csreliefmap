@@ -24,19 +24,19 @@ sudo pip install -r requirements.txt
 
 ```sh
 # around Tokachi
-python CSReliefMap.py generateImageByBounds --west 142.74810791015625 --north 43.25320494908846 --south 42.21224516288584 --east 143.72589111328125 --zoom 14 --workers 4 --local-scheduler
+python CSReliefMap.py GenerateImageByBounds --west 142.74810791015625 --north 43.25320494908846 --south 42.21224516288584 --east 143.72589111328125 --zoom 14 --workers 4 --local-scheduler
 
 # around Tokyo
-python CSReliefMap.py generateImageByBounds --west 139.559326171875 --north 35.77994251888403 --south 35.36217605914681 --east 140.2569580078125 --zoom 15 --workers 4 --local-scheduler
+python CSReliefMap.py GenerateImageByBounds --west 139.559326171875 --north 35.77994251888403 --south 35.36217605914681 --east 140.2569580078125 --zoom 15 --workers 4 --local-scheduler
 
 # generate each tile
-python CSReliefMap.py generateImageCurvature --x 29139 --y 12936 --z 15 --local-scheduler
+python CSReliefMap.py GenerateImageCurvature --x 29139 --y 12936 --z 15 --local-scheduler
 
 # generate each tile (slope only)
-python CSReliefMap.py generateImageSlope --x 29139 --y 12936 --z 15 --local-scheduler
+python CSReliefMap.py GenerateImageSlope --x 29139 --y 12936 --z 15 --local-scheduler
 
 # generate each tile (curvature only)
-python CSReliefMap.py generateImageCSReliefMap --x 29139 --y 12936 --z 15 --local-scheduler
+python CSReliefMap.py GenerateImageCSReliefMap --x 29139 --y 12936 --z 15 --local-scheduler
 
 ```
 
@@ -46,7 +46,7 @@ python CSReliefMap.py generateImageCSReliefMap --x 29139 --y 12936 --z 15 --loca
 python CSReliefMap.py resizeTileImage --x 3641 --y 1616 --z 12 --sourceZ 14 --sourceTask generateImageCSReliefMap --workers 4 --local-scheduler 
 
 # around Tokyo
-python CSReliefMap.py generateResizedImageByBounds --west 139.559326171875 --north 35.77994251888403 --south 35.36217605914681 --east 140.2569580078125 --zoom 10 --workers 4 --local-scheduler
+python CSReliefMap.py GenerateResizedImageByBounds --west 139.559326171875 --north 35.77994251888403 --south 35.36217605914681 --east 140.2569580078125 --zoom 10 --workers 4 --local-scheduler
 
 
 ```
@@ -58,10 +58,10 @@ python CSReliefMap.py generateResizedImageByBounds --west 139.559326171875 --nor
 #### generate by japanese level-1 mesh(1次メッシュ)
 
 ```sh
-python CSReliefMap.py generateImageByMeshCodes --meshcodes "[6341,6342]" --zoom 14 --workers 4 --local-scheduler
+python CSReliefMap.py GenerateImageByMeshCodes --meshcodes "[6341,6342]" --zoom 14 --workers 4 --local-scheduler
 
 # resized tile map based on zoom 14 (experimental)
-python CSReliefMap.py generateImageByMeshCodes --targetTask generateResizedImageByBounds --meshcodes "[6341,6342]" --zoom 10 --workers 4 --local-scheduler
+python CSReliefMap.py GenerateImageByMeshCodes --targetTask generateResizedImageByBounds --meshcodes "[6341,6342]" --zoom 10 --workers 4 --local-scheduler
 
 
 ```

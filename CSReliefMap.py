@@ -69,7 +69,7 @@ class DownloadTile(luigi.Task):
                 f_out.write(chunk)
 
 
-class loadDem(DownloadTile):
+class LoadDem(DownloadTile):
     """
     標高タイル（基盤地図情報数値標高モデル）
     https://maps.gsi.go.jp/development/ichiran.html
@@ -78,7 +78,7 @@ class loadDem(DownloadTile):
     baseUrl = None
 
     def __init__(self, *args, **kwargs):
-        super(loadDem, self).__init__(*args, **kwargs)
+        super(LoadDem, self).__init__(*args, **kwargs)
         if self.z == 15:
             # 15
             self.baseUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem5a/{z}/{x}/{y}.txt"
@@ -89,7 +89,7 @@ class loadDem(DownloadTile):
             raise
 
 
-class calcDemSlope(luigi.Task):
+class CalcDemSlope(luigi.Task):
     # http://www.spatialanalysisonline.com/HTML/index.html?profiles_and_curvature.htm
     x = luigi.IntParameter()
     y = luigi.IntParameter()
@@ -99,22 +99,22 @@ class calcDemSlope(luigi.Task):
     folder_name = "demSlope"
 
     def requires(self):
-        def chooseTask(x, y):
+        def choose_task(x, y):
             if(x < min(self.xRange) or x >= max(self.xRange)):
                 return None
             if(y < min(self.yRange) or y >= max(self.yRange)):
                 return None
-            return loadDem(x=x, y=y, z=self.z)
+            return LoadDem(x=x, y=y, z=self.z)
         self.taskList = [
-            [chooseTask(x=self.x - 1, y=self.y - 1),
-             chooseTask(x=self.x, y=self.y - 1),
-             chooseTask(x=self.x + 1, y=self.y - 1)],
-            [chooseTask(x=self.x - 1, y=self.y),
-             chooseTask(x=self.x, y=self.y),
-             chooseTask(x=self.x + 1, y=self.y)],
-            [chooseTask(x=self.x - 1, y=self.y + 1),
-             chooseTask(x=self.x, y=self.y + 1),
-             chooseTask(x=self.x + 1, y=self.y + 1)]
+            [choose_task(x=self.x - 1, y=self.y - 1),
+             choose_task(x=self.x, y=self.y - 1),
+             choose_task(x=self.x + 1, y=self.y - 1)],
+            [choose_task(x=self.x - 1, y=self.y),
+             choose_task(x=self.x, y=self.y),
+             choose_task(x=self.x + 1, y=self.y)],
+            [choose_task(x=self.x - 1, y=self.y + 1),
+             choose_task(x=self.x, y=self.y + 1),
+             choose_task(x=self.x + 1, y=self.y + 1)]
         ]
         return filter(lambda x: x != None, self.taskList)
 
@@ -160,7 +160,7 @@ class calcDemSlope(luigi.Task):
             np.save(output_f, grd)
 
 
-class calcDemCurvature(calcDemSlope):
+class CalcDemCurvature(CalcDemSlope):
     folder_name = "demCurvature"
 
     def run(self):
@@ -196,7 +196,7 @@ class calcDemCurvature(calcDemSlope):
             np.save(output_f, np.nan_to_num(cur))
 
 
-class generateImageSlope(luigi.Task):
+class GenerateImageSlope(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
@@ -206,7 +206,7 @@ class generateImageSlope(luigi.Task):
     abs_filter = True
 
     def __init__(self, *args, **kwargs):
-        super(generateImageSlope, self).__init__(*args, **kwargs)
+        super(GenerateImageSlope, self).__init__(*args, **kwargs)
         self.cmapper = self.get_color_mapper()
 
     def get_color_mapper(self):
@@ -225,7 +225,7 @@ class generateImageSlope(luigi.Task):
         return luigi.LocalTarget(output_file)
 
     def requires(self):
-        return calcDemSlope(x=self.x, y=self.y, z=self.z)
+        return CalcDemSlope(x=self.x, y=self.y, z=self.z)
 
     def get_color(self, value):
         color = self.cmapper.to_rgba(value)
@@ -249,7 +249,7 @@ class generateImageSlope(luigi.Task):
         img.save(self.output().fn, 'PNG')
 
 
-class generateImageCurvature(generateImageSlope):
+class GenerateImageCurvature(GenerateImageSlope):
     folder_name = "demCurvature"
     cmap_name = "Blues"
     cmap_range = [-150, 150]
@@ -261,10 +261,10 @@ class generateImageCurvature(generateImageSlope):
         return cmapper
 
     def requires(self):
-        return calcDemCurvature(x=self.x, y=self.y, z=self.z)
+        return CalcDemCurvature(x=self.x, y=self.y, z=self.z)
 
 
-class generateImageCSReliefMap(luigi.Task):
+class GenerateImageCSReliefMap(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
@@ -272,8 +272,8 @@ class generateImageCSReliefMap(luigi.Task):
 
     def requires(self):
         return [
-            generateImageSlope(x=self.x, y=self.y, z=self.z),
-            generateImageCurvature(x=self.x, y=self.y, z=self.z),
+            GenerateImageSlope(x=self.x, y=self.y, z=self.z),
+            GenerateImageCurvature(x=self.x, y=self.y, z=self.z),
         ]
 
     def output(self):
@@ -298,7 +298,7 @@ class generateImageCSReliefMap(luigi.Task):
             output_img.save(output_f, 'PNG')
 
 
-class resizeTileImage(luigi.Task):
+class ResizeTileImage(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
@@ -307,35 +307,35 @@ class resizeTileImage(luigi.Task):
     max_search_z = luigi.IntParameter(default=14)
     folder_name = luigi.Parameter(default="resized")
     sourceZ = luigi.IntParameter()
-    sourceTask = luigi.TaskParameter(default=generateImageCSReliefMap)
+    sourceTask = luigi.TaskParameter(default=GenerateImageCSReliefMap)
 
     def requires(self):
-        def chooseTask(x, y, z):
+        def choose_task(x, y, z):
             if z == self.sourceZ:
                 return self.sourceTask(x=x, y=y, z=z)
             else:
-                return resizeTileImage(x=x, y=y, z=z, ignore_no_image=self.ignore_no_image, fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceTask=self.sourceTask, sourceZ=self.sourceZ)
+                return ResizeTileImage(x=x, y=y, z=z, ignore_no_image=self.ignore_no_image, fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceTask=self.sourceTask, sourceZ=self.sourceZ)
 
         x = self.x * 2
         y = self.y * 2
         z = self.z + 1
         self.task_list = [
-            [chooseTask(x=x - 1, y=y - 1, z=z),
-             chooseTask(x=x, y=y - 1, z=z),
-             chooseTask(x=x + 1, y=y - 1, z=z),
-             chooseTask(x=x + 2, y=y - 1, z=z)],
-            [chooseTask(x=x - 1, y=y, z=z),
-             chooseTask(x=x, y=y, z=z),
-             chooseTask(x=x + 1, y=y, z=z),
-             chooseTask(x=x + 2, y=y, z=z)],
-            [chooseTask(x=x - 1, y=y + 1, z=z),
-             chooseTask(x=x, y=y + 1, z=z),
-             chooseTask(x=x + 1, y=y + 1, z=z),
-             chooseTask(x=x + 2, y=y + 1, z=z)],
-            [chooseTask(x=x - 1, y=y + 2, z=z),
-             chooseTask(x=x, y=y + 2, z=z),
-             chooseTask(x=x + 1, y=y + 2, z=z),
-             chooseTask(x=x + 2, y=y + 2, z=z)]
+            [choose_task(x=x - 1, y=y - 1, z=z),
+             choose_task(x=x, y=y - 1, z=z),
+             choose_task(x=x + 1, y=y - 1, z=z),
+             choose_task(x=x + 2, y=y - 1, z=z)],
+            [choose_task(x=x - 1, y=y, z=z),
+             choose_task(x=x, y=y, z=z),
+             choose_task(x=x + 1, y=y, z=z),
+             choose_task(x=x + 2, y=y, z=z)],
+            [choose_task(x=x - 1, y=y + 1, z=z),
+             choose_task(x=x, y=y + 1, z=z),
+             choose_task(x=x + 1, y=y + 1, z=z),
+             choose_task(x=x + 2, y=y + 1, z=z)],
+            [choose_task(x=x - 1, y=y + 2, z=z),
+             choose_task(x=x, y=y + 2, z=z),
+             choose_task(x=x + 1, y=y + 2, z=z),
+             choose_task(x=x + 2, y=y + 2, z=z)]
         ]
         if self.ignore_no_image or self.max_search_z < z:
             return None
@@ -377,7 +377,7 @@ class resizeTileImage(luigi.Task):
             cropped_image.save(output_f, 'PNG')
 
 
-class generateImageByBounds(luigi.WrapperTask):
+class GenerateImageByBounds(luigi.WrapperTask):
     """
     Schedule Download Tasks
     """
@@ -386,15 +386,15 @@ class generateImageByBounds(luigi.WrapperTask):
     south = luigi.FloatParameter()
     east = luigi.FloatParameter()
     zoom = luigi.IntParameter()
-    targetTask = luigi.TaskParameter(default=generateImageCSReliefMap)
+    targetTask = luigi.TaskParameter(default=GenerateImageCSReliefMap)
 
     def requires(self):
         """
         scheduling tasks
         """
 
-        candidateTasks = [generateImageCSReliefMap,
-                          generateImageCurvature, generateImageSlope]
+        candidateTasks = [GenerateImageCSReliefMap,
+                          GenerateImageCurvature, GenerateImageSlope]
         if not self.targetTask in candidateTasks:
             raise
 
@@ -410,7 +410,7 @@ class generateImageByBounds(luigi.WrapperTask):
                 yield self.targetTask(x=tile_x, y=tile_y, z=self.zoom)
 
 
-class generateResizedImageByBounds(luigi.WrapperTask):
+class GenerateResizedImageByBounds(luigi.WrapperTask):
     """
     Schedule Download Tasks
     """
@@ -419,7 +419,7 @@ class generateResizedImageByBounds(luigi.WrapperTask):
     south = luigi.FloatParameter()
     east = luigi.FloatParameter()
     zoom = luigi.IntParameter()
-    targetTask = luigi.TaskParameter(default=generateImageCSReliefMap)
+    targetTask = luigi.TaskParameter(default=GenerateImageCSReliefMap)
     ignore_no_image = luigi.BoolParameter(default=False)
     fill_image = luigi.Parameter(default=None)
     max_search_z = luigi.IntParameter(default=14)
@@ -438,7 +438,7 @@ class generateResizedImageByBounds(luigi.WrapperTask):
         print deg_to_num(self.north, self.west, self.zoom) + deg_to_num(self.south, self.east, self.zoom)
         for tile_x in range(edge_nw_x, edge_se_x + 1 + 10):
             for tile_y in range(edge_nw_y, edge_se_y + 1 + 10):
-                yield resizeTileImage(x=tile_x, y=tile_y, z=self.zoom, sourceTask=self.targetTask, ignore_no_image=self.ignore_no_image, fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceZ=self.sourceZoom)
+                yield ResizeTileImage(x=tile_x, y=tile_y, z=self.zoom, sourceTask=self.targetTask, ignore_no_image=self.ignore_no_image, fill_image=self.fill_image, max_search_z=self.max_search_z, folder_name=self.folder_name, sourceZ=self.sourceZoom)
 
 
 def meshcode_to_latlng(meshcode):
@@ -447,13 +447,13 @@ def meshcode_to_latlng(meshcode):
     return (latitude, longtitude)
 
 
-class generateImageByMeshCodes(luigi.WrapperTask):
+class GenerateImageByMeshCodes(luigi.WrapperTask):
     """
     Schedule Download Tasks
     """
     meshcodes = luigi.ListParameter()
     zoom = luigi.IntParameter()
-    targetTask = luigi.TaskParameter(default=generateImageByBounds)
+    targetTask = luigi.TaskParameter(default=GenerateImageByBounds)
 
     def requires(self):
         for meshcode in self.meshcodes:
