@@ -196,11 +196,20 @@ class CalcDemCurvature(CalcDemSlope):
             np.save(output_f, np.nan_to_num(cur))
 
 
+def generate_sea_map(data, color=(196, 218, 255, 255)):
+    colored_data = np.ones((256, 256, 4), dtype=np.uint8)
+    colored_data *= 255
+    colored_data[np.isnan(data), :] = np.array(color)
+    img = Image.fromarray(colored_data)
+    return img
+
+
 class GenerateSeaMap(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
     folder_name = "imgSeaMap"
+    color = luigi.TupleParameter(default=(196, 218, 255, 255))
 
     def output(self):
         output_file = "./var/{}/{}/{}/{}.{}".format(
@@ -217,13 +226,19 @@ class GenerateSeaMap(luigi.Task):
 
     def run(self):
         data = self.requires().load_data()
-        colored_data = np.ones((256, 256, 4), dtype=np.uint8)
-        colored_data *= 255
-        colored_data[np.isnan(data), :] = np.array((196, 218, 255, 255))
-        img = Image.fromarray(colored_data)
+        img = generate_sea_map(data, color=self.color)
 
         with self.output().open("wb") as output_f:
             img.save(output_f, 'PNG')
+
+
+def generate_image_slope(data, cmap_name="YlGn", cmap_range=[0, 70]):
+    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
+                                                       vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
+    colored_data = np.uint8(cmapper.to_rgba(data) * 255)
+    colored_data[:, :, 3] = 255
+    img = Image.fromarray(colored_data)
+    return img
 
 
 class GenerateImageSlope(luigi.Task):
@@ -234,15 +249,6 @@ class GenerateImageSlope(luigi.Task):
     cmap_name = "YlGn"
     cmap_range = [0, 70]
     abs_filter = True
-
-    def __init__(self, *args, **kwargs):
-        super(GenerateImageSlope, self).__init__(*args, **kwargs)
-        self.cmapper = self.get_color_mapper()
-
-    def get_color_mapper(self):
-        cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
-                                                           vmin=min(self.cmap_range), vmax=max(self.cmap_range), clip=True), cmap=plt.get_cmap(self.cmap_name))
-        return cmapper
 
     def output(self):
         output_file = "./var/{}/{}/{}/{}.{}".format(
@@ -257,9 +263,42 @@ class GenerateImageSlope(luigi.Task):
     def requires(self):
         return CalcDemSlope(x=self.x, y=self.y, z=self.z)
 
-    def get_color(self, value):
-        color = self.cmapper.to_rgba(value)
-        return tuple([int(256 * x) for x in color])
+    def run(self):
+        size_x, size_y = (256, 256)
+
+        with self.input().open("r") as input_f:
+            data = np.load(input_f)
+
+        if self.abs_filter:
+            data = np.abs(data)
+
+        d_max = np.max(data)
+        d_min = np.min(data)
+        print (d_max, d_min)
+        img = generate_image_slope(
+            data, cmap_name=self.cmap_name, cmap_range=self.cmap_range)
+
+        with self.output().open("wb") as output_f:
+            img.save(output_f, 'PNG')
+
+
+def generate_image_curvature(data, cmap_name="bwr", cmap_range=[-150, 150]):
+    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.015, linscale=0.03,
+                                                       vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
+    colored_data = np.uint8(cmapper.to_rgba(data) * 255)
+    colored_data[:, :, 3] = 255
+    img = Image.fromarray(colored_data)
+    return img
+
+
+class GenerateImageCurvature(GenerateImageSlope):
+    folder_name = "imgDemCurvature"
+    cmap_name = "bwr"
+    cmap_range = [-150, 150]
+    abs_filter = False
+
+    def requires(self):
+        return CalcDemCurvature(x=self.x, y=self.y, z=self.z)
 
     def run(self):
         size_x, size_y = (256, 256)
@@ -273,30 +312,63 @@ class GenerateImageSlope(luigi.Task):
         d_max = np.max(data)
         d_min = np.min(data)
         print (d_max, d_min)
-        colored_data = np.uint8(self.cmapper.to_rgba(data) * 255)
-        colored_data[:, :, 3] = 255
-        img = Image.fromarray(colored_data)
+        img = generate_image_curvature(
+            data, cmap_name=self.cmap_name, cmap_range=self.cmap_range)
 
         with self.output().open("wb") as output_f:
             img.save(output_f, 'PNG')
 
 
-class GenerateImageCurvature(GenerateImageSlope):
-    folder_name = "imgDemCurvature"
-    cmap_name = "bwr"
-    cmap_range = [-150, 150]
-    abs_filter = False
-
-    def get_color_mapper(self):
-        cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.015, linscale=0.03,
-                                                           vmin=min(self.cmap_range), vmax=max(self.cmap_range), clip=True), cmap=plt.get_cmap(self.cmap_name))
-        return cmapper
+class GenerateImageCSReliefMap(luigi.Task):
+    x = luigi.IntParameter()
+    y = luigi.IntParameter()
+    z = luigi.IntParameter()
+    folder_name = "imgCSReliefMap"
 
     def requires(self):
-        return CalcDemCurvature(x=self.x, y=self.y, z=self.z)
+        return [
+            LoadDem(x=self.x, y=self.y, z=self.z),
+            CalcDemSlope(x=self.x, y=self.y, z=self.z),
+            CalcDemCurvature(x=self.x, y=self.y, z=self.z),
+        ]
+
+    def output(self):
+        output_file = "./var/{}/{}/{}/{}.{}".format(
+            self.folder_name,
+            self.z,
+            self.x,
+            self.y,
+            "png"
+        )
+        return luigi.LocalTarget(output_file)
+
+    def run(self):
+        size_x, size_y = (256, 256)
+
+        imgs = []
+        # Sea Map
+        data_dem = self.requires()[0].load_data()
+        imgs.append(generate_sea_map(data_dem))
+
+        # Slope
+        with self.input()[1].open("r") as input_f:
+            data_slope = np.load(input_f)
+        imgs.append(generate_image_slope(data_slope))
+
+        # Curvature
+        with self.input()[2].open("r") as input_f:
+            data_curvature = np.load(input_f)
+        imgs.append(generate_image_curvature(data_curvature))
+
+        output_img = Image.new('RGBA', (size_x, size_y), (255, 255, 255, 255))
+        for img in imgs:
+            output_img = ImageChops.multiply(output_img, img)
+
+        with self.output().open("wb") as output_f:
+            output_img.save(output_f, 'PNG')
 
 
-class GenerateImageCSReliefMap(luigi.Task):
+class GenerateImageCSReliefMapByCombiningImgs(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
