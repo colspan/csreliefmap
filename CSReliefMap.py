@@ -217,8 +217,6 @@ class GenerateSeaMap(luigi.Task):
 
     def run(self):
         data = self.requires().load_data()
-        print data < 0
-        print np.isnan(data)
         colored_data = np.ones((256, 256, 4), dtype=np.uint8)
         colored_data *= 255
         colored_data[np.isnan(data), :] = np.array((196, 218, 255, 255))
