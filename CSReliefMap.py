@@ -236,7 +236,7 @@ class GenerateSeaMap(luigi.Task):
 def generate_image_slope(data, cmap_name="YlGn", cmap_range=[0, 70]):
     cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
                                                        vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
-    colored_data = np.uint8(cmapper.to_rgba(data) * 255)
+    colored_data = np.uint8(cmapper.to_rgba(np.abs(data)) * 255)
     colored_data[:, :, 3] = 255
     img = Image.fromarray(colored_data)
     return img
