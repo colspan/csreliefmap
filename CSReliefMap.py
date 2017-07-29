@@ -200,7 +200,7 @@ class GenerateSeaMap(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
-    folder_name = "seaMap"
+    folder_name = "imgSeaMap"
 
     def output(self):
         output_file = "./var/{}/{}/{}/{}.{}".format(
@@ -232,7 +232,7 @@ class GenerateImageSlope(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
-    folder_name = "demSlope"
+    folder_name = "imgDemSlope"
     cmap_name = "YlGn"
     cmap_range = [0, 70]
     abs_filter = True
@@ -284,7 +284,7 @@ class GenerateImageSlope(luigi.Task):
 
 
 class GenerateImageCurvature(GenerateImageSlope):
-    folder_name = "demCurvature"
+    folder_name = "imgDemCurvature"
     cmap_name = "bwr"
     cmap_range = [-150, 150]
     abs_filter = False
@@ -302,7 +302,7 @@ class GenerateImageCSReliefMap(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
-    folder_name = "CSReliefMap"
+    folder_name = "imgCSReliefMap"
 
     def requires(self):
         return [
