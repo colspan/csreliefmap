@@ -142,24 +142,13 @@ class CalcDemSlope(luigi.Task):
         )
         return luigi.LocalTarget(output_file)
 
-    def _load_tile_txt(self, f):
-        tile = np.empty((256, 256))
-        try:
-            for i, line in enumerate(f):
-                tile[i, :] = np.array(
-                    [float(x) if x != "e" else np.NAN for x in line.strip().split(",")])
-        except:
-            tile[:] = np.NAN
-        return tile
-
     def _combine_tiles(self):
         combinedTile = np.empty((256 * 3, 256 * 3))
         for i in range(3):
             for j in range(3):
-                with self.taskList[i][j].output().open("r") as input_f:
-                    tile = self._load_tile_txt(input_f)
-                    combinedTile[256 * i:256 *
-                                 (i + 1), 256 * j:256 * (j + 1)] = tile
+                tile = self.taskList[i][j].load_data()
+                combinedTile[256 * i:256 *
+                             (i + 1), 256 * j:256 * (j + 1)] = tile
         return combinedTile
 
     def run(self):
@@ -212,6 +201,7 @@ class GenerateSeaMap(luigi.Task):
     y = luigi.IntParameter()
     z = luigi.IntParameter()
     folder_name = "seaMap"
+
     def output(self):
         output_file = "./var/{}/{}/{}/{}.{}".format(
             self.folder_name,
