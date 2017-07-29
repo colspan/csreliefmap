@@ -148,8 +148,8 @@ class CalcDemSlope(luigi.Task):
             for j in range(3):
                 if self.taskList[i][j] != None:
                     tile = self.taskList[i][j].load_data()
-                combinedTile[256 * i:256 *
-                             (i + 1), 256 * j:256 * (j + 1)] = tile
+                    combinedTile[256 * i:256 *
+                                (i + 1), 256 * j:256 * (j + 1)] = tile
         return combinedTile
 
     def run(self):
