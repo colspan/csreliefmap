@@ -88,6 +88,17 @@ class LoadDem(DownloadTile):
         else:
             raise
 
+    def load_data(self):
+        tile = np.empty((256, 256))
+        with self.output().open("r") as f:
+            try:
+                for i, line in enumerate(f):
+                    tile[i, :] = np.array(
+                        [float(x) if x != "e" else np.NAN for x in line.strip().split(",")])
+            except:
+                tile[:] = np.NAN
+        return tile
+
 
 class CalcDemSlope(luigi.Task):
     # http://www.spatialanalysisonline.com/HTML/index.html?profiles_and_curvature.htm
@@ -196,12 +207,43 @@ class CalcDemCurvature(CalcDemSlope):
             np.save(output_f, np.nan_to_num(cur))
 
 
+class GenerateSeaMap(luigi.Task):
+    x = luigi.IntParameter()
+    y = luigi.IntParameter()
+    z = luigi.IntParameter()
+    folder_name = "seaMap"
+    def output(self):
+        output_file = "./var/{}/{}/{}/{}.{}".format(
+            self.folder_name,
+            self.z,
+            self.x,
+            self.y,
+            "png"
+        )
+        return luigi.LocalTarget(output_file)
+
+    def requires(self):
+        return LoadDem(x=self.x, y=self.y, z=self.z)
+
+    def run(self):
+        data = self.requires().load_data()
+        print data < 0
+        print np.isnan(data)
+        colored_data = np.ones((256, 256, 4), dtype=np.uint8)
+        colored_data *= 255
+        colored_data[np.isnan(data), :] = np.array((196, 218, 255, 255))
+        img = Image.fromarray(colored_data)
+
+        with self.output().open("wb") as output_f:
+            img.save(output_f, 'PNG')
+
+
 class GenerateImageSlope(luigi.Task):
     x = luigi.IntParameter()
     y = luigi.IntParameter()
     z = luigi.IntParameter()
     folder_name = "demSlope"
-    cmap_name = "Reds"
+    cmap_name = "YlGn"
     cmap_range = [0, 70]
     abs_filter = True
 
@@ -246,12 +288,14 @@ class GenerateImageSlope(luigi.Task):
         colored_data = np.uint8(self.cmapper.to_rgba(data) * 255)
         colored_data[:, :, 3] = 255
         img = Image.fromarray(colored_data)
-        img.save(self.output().fn, 'PNG')
+
+        with self.output().open("wb") as output_f:
+            img.save(output_f, 'PNG')
 
 
 class GenerateImageCurvature(GenerateImageSlope):
     folder_name = "demCurvature"
-    cmap_name = "Blues"
+    cmap_name = "bwr"
     cmap_range = [-150, 150]
     abs_filter = False
 
@@ -272,6 +316,7 @@ class GenerateImageCSReliefMap(luigi.Task):
 
     def requires(self):
         return [
+            GenerateSeaMap(x=self.x, y=self.y, z=self.z),
             GenerateImageSlope(x=self.x, y=self.y, z=self.z),
             GenerateImageCurvature(x=self.x, y=self.y, z=self.z),
         ]
