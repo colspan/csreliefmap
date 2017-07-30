@@ -29,13 +29,13 @@ python CSReliefMap.py GenerateImageByBounds --west 142.74810791015625 --north 43
 # around Tokyo
 python CSReliefMap.py GenerateImageByBounds --west 139.559326171875 --north 35.77994251888403 --south 35.36217605914681 --east 140.2569580078125 --zoom 15 --workers 4 --local-scheduler
 
-# generate each tile
+# generate each tile (curvature only)
 python CSReliefMap.py GenerateImageCurvature --x 29139 --y 12936 --z 15 --local-scheduler
 
 # generate each tile (slope only)
 python CSReliefMap.py GenerateImageSlope --x 29139 --y 12936 --z 15 --local-scheduler
 
-# generate each tile (curvature only)
+# generate each tile
 python CSReliefMap.py GenerateImageCSReliefMap --x 29139 --y 12936 --z 15 --local-scheduler
 
 ```
