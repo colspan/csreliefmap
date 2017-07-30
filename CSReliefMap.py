@@ -149,7 +149,7 @@ class CalcDemSlope(luigi.Task):
                 if self.taskList[i][j] != None:
                     tile = self.taskList[i][j].load_data()
                     combinedTile[256 * i:256 *
-                                (i + 1), 256 * j:256 * (j + 1)] = tile
+                                 (i + 1), 256 * j:256 * (j + 1)] = tile
         return combinedTile
 
     def run(self):
@@ -195,6 +195,15 @@ class CalcDemCurvature(CalcDemSlope):
 
         with self.output().open("w") as output_f:
             np.save(output_f, np.nan_to_num(cur))
+
+
+def generate_height_map(data, cmap_name="hot_r", cmap_range=[0, 1000000]):
+    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=1, linscale=0.01,
+                                                       vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
+    colored_data = np.uint8(cmapper.to_rgba(data) * 255)
+    colored_data[:, :, 3] = 255
+    img = Image.fromarray(colored_data/2+127)
+    return img
 
 
 def generate_sea_map(data, color=(196, 218, 255, 255)):
@@ -283,10 +292,10 @@ class GenerateImageSlope(luigi.Task):
             img.save(output_f, 'PNG')
 
 
-def generate_image_curvature(data, cmap_name="bwr", cmap_range=[-150, 150]):
-    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.015, linscale=0.03,
+def generate_image_curvature(data, cmap_name="gnuplot2_r", cmap_range=[0, 5]):
+    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.02, linscale=0.8,
                                                        vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
-    colored_data = np.uint8(cmapper.to_rgba(data) * 255)
+    colored_data = np.uint8(cmapper.to_rgba(np.abs(data)) * 255)
     colored_data[:, :, 3] = 255
     img = Image.fromarray(colored_data)
     return img
@@ -347,8 +356,12 @@ class GenerateImageCSReliefMap(luigi.Task):
         size_x, size_y = (256, 256)
 
         imgs = []
-        # Sea Map
+
         data_dem = self.requires()[0].load_data()
+        # Height Map
+        imgs.append(generate_height_map(data_dem))
+
+        # Sea Map
         imgs.append(generate_sea_map(data_dem))
 
         # Slope
