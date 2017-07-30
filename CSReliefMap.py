@@ -202,7 +202,7 @@ def generate_height_map(data, cmap_name="bone_r", cmap_range=[0, 1000000]):
                                                        vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
     colored_data = np.uint8(cmapper.to_rgba(data) * 255)
     colored_data[:, :, 3] = 255
-    img = Image.fromarray(colored_data/2+127)
+    img = Image.fromarray(colored_data / 2 + 127)
     return img
 
 
@@ -258,7 +258,6 @@ class GenerateImageSlope(luigi.Task):
     folder_name = "imgDemSlope"
     cmap_name = "YlGn"
     cmap_range = [0, 70]
-    abs_filter = True
 
     def output(self):
         output_file = "./var/{}/{}/{}/{}.{}".format(
@@ -278,9 +277,6 @@ class GenerateImageSlope(luigi.Task):
 
         with self.input().open("r") as input_f:
             data = np.load(input_f)
-
-        if self.abs_filter:
-            data = np.abs(data)
 
         d_max = np.max(data)
         d_min = np.min(data)
@@ -303,9 +299,8 @@ def generate_image_curvature(data, cmap_name="gnuplot2_r", cmap_range=[0, 5]):
 
 class GenerateImageCurvature(GenerateImageSlope):
     folder_name = "imgDemCurvature"
-    cmap_name = "bwr"
-    cmap_range = [-150, 150]
-    abs_filter = False
+    cmap_name = "gnuplot2_r"
+    cmap_range = [0, 5]
 
     def requires(self):
         return CalcDemCurvature(x=self.x, y=self.y, z=self.z)
@@ -315,9 +310,6 @@ class GenerateImageCurvature(GenerateImageSlope):
 
         with self.input().open("r") as input_f:
             data = np.load(input_f)
-
-        if self.abs_filter:
-            data = np.abs(data)
 
         d_max = np.max(data)
         d_min = np.min(data)
@@ -377,41 +369,6 @@ class GenerateImageCSReliefMap(luigi.Task):
         output_img = Image.new('RGBA', (size_x, size_y), (255, 255, 255, 255))
         for img in imgs:
             output_img = ImageChops.multiply(output_img, img)
-
-        with self.output().open("wb") as output_f:
-            output_img.save(output_f, 'PNG')
-
-
-class GenerateImageCSReliefMapByCombiningImgs(luigi.Task):
-    x = luigi.IntParameter()
-    y = luigi.IntParameter()
-    z = luigi.IntParameter()
-    folder_name = "imgCSReliefMap"
-
-    def requires(self):
-        return [
-            GenerateSeaMap(x=self.x, y=self.y, z=self.z),
-            GenerateImageSlope(x=self.x, y=self.y, z=self.z),
-            GenerateImageCurvature(x=self.x, y=self.y, z=self.z),
-        ]
-
-    def output(self):
-        output_file = "./var/{}/{}/{}/{}.{}".format(
-            self.folder_name,
-            self.z,
-            self.x,
-            self.y,
-            "png"
-        )
-        return luigi.LocalTarget(output_file)
-
-    def run(self):
-        size_x, size_y = (256, 256)
-
-        output_img = Image.new('RGBA', (size_x, size_y), (255, 255, 255, 255))
-        for source in self.input():
-            input_img = Image.open(source.fn)
-            output_img = ImageChops.multiply(output_img, input_img)
 
         with self.output().open("wb") as output_f:
             output_img.save(output_f, 'PNG')
