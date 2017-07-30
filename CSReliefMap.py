@@ -197,7 +197,7 @@ class CalcDemCurvature(CalcDemSlope):
             np.save(output_f, np.nan_to_num(cur))
 
 
-def generate_height_map(data, cmap_name="hot_r", cmap_range=[0, 1000000]):
+def generate_height_map(data, cmap_name="bone_r", cmap_range=[0, 1000000]):
     cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=1, linscale=0.01,
                                                        vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
     colored_data = np.uint8(cmapper.to_rgba(data) * 255)
