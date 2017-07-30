@@ -68,6 +68,8 @@ python CSReliefMap.py GenerateImageByMeshCodes --targetTask generateResizedImage
 
 #### generated result
 
+Generated results are available at [CS Relief Map Web Viewer](http://maps.colspan.net/csrelief/v1/).
+
 ## License
 
 ### Software
