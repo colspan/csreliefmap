@@ -155,10 +155,12 @@ class CalcDemSlope(luigi.Task):
     def run(self):
         combinedTile = self._combine_tiles()
         # print combinedTile
-        grd = np.gradient(np.nan_to_num(combinedTile))[
-            0][256:256 * 2, 256:256 * 2]
+        grd = np.gradient(np.nan_to_num(combinedTile))
+        grd_x = grd[0][256:256 * 2, 256:256 * 2]
+        grd_y = grd[1][256:256 * 2, 256:256 * 2]
+
         with self.output().open("w") as output_f:
-            np.save(output_f, grd)
+            np.save(output_f, np.abs(grd_x) + np.abs(grd_y))
 
 
 class CalcDemCurvature(CalcDemSlope):
@@ -242,8 +244,8 @@ class GenerateSeaMap(luigi.Task):
             img.save(output_f, 'PNG')
 
 
-def generate_image_slope(data, cmap_name="YlGn", cmap_range=[0, 70]):
-    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
+def generate_image_slope(data, cmap_name="Blues", cmap_range=[0, 80]):
+    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.5, linscale=0.5,
                                                        vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
     colored_data = np.uint8(cmapper.to_rgba(np.abs(data)) * 255)
     colored_data[:, :, 3] = 255
@@ -256,8 +258,8 @@ class GenerateImageSlope(luigi.Task):
     y = luigi.IntParameter()
     z = luigi.IntParameter()
     folder_name = "imgDemSlope"
-    cmap_name = "YlGn"
-    cmap_range = [0, 70]
+    cmap_name = "Blues"
+    cmap_range = [0, 25]
 
     def output(self):
         output_file = "./var/{}/{}/{}/{}.{}".format(
@@ -288,10 +290,10 @@ class GenerateImageSlope(luigi.Task):
             img.save(output_f, 'PNG')
 
 
-def generate_image_curvature(data, cmap_name="gnuplot2_r", cmap_range=[0, 5]):
-    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.02, linscale=0.8,
+def generate_image_curvature(data, cmap_name="Greens", cmap_range=[-0.07, 0.07]):
+    cmapper = cm.ScalarMappable(norm=colors.SymLogNorm(linthresh=0.5, linscale=0.5,
                                                        vmin=min(cmap_range), vmax=max(cmap_range), clip=True), cmap=plt.get_cmap(cmap_name))
-    colored_data = np.uint8(cmapper.to_rgba(np.abs(data)) * 255)
+    colored_data = np.uint8(cmapper.to_rgba(data) * 255)
     colored_data[:, :, 3] = 255
     img = Image.fromarray(colored_data)
     return img
@@ -299,8 +301,8 @@ def generate_image_curvature(data, cmap_name="gnuplot2_r", cmap_range=[0, 5]):
 
 class GenerateImageCurvature(GenerateImageSlope):
     folder_name = "imgDemCurvature"
-    cmap_name = "gnuplot2_r"
-    cmap_range = [0, 5]
+    cmap_name = "Greens"
+    cmap_range = [-0.07, 0.07]
 
     def requires(self):
         return CalcDemCurvature(x=self.x, y=self.y, z=self.z)
