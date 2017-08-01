@@ -209,7 +209,7 @@ def generate_height_map(data, cmap_name="bone_r", cmap_range=[0, 1000000]):
 
 
 def generate_sea_map(data, color=(196, 218, 255, 255)):
-    colored_data = np.ones((256, 256, 4), dtype=np.uint8)
+    colored_data = np.zeros((256, 256, 4), dtype=np.uint8)
     colored_data *= 255
     colored_data[np.isnan(data), :] = np.array(color)
     img = Image.fromarray(colored_data)
@@ -355,9 +355,6 @@ class GenerateImageCSReliefMap(luigi.Task):
         # Height Map
         imgs.append(generate_height_map(data_dem))
 
-        # Sea Map
-        imgs.append(generate_sea_map(data_dem))
-
         # Slope
         with self.input()[1].open("r") as input_f:
             data_slope = np.load(input_f)
@@ -371,6 +368,11 @@ class GenerateImageCSReliefMap(luigi.Task):
         output_img = Image.new('RGBA', (size_x, size_y), (255, 255, 255, 255))
         for img in imgs:
             output_img = ImageChops.multiply(output_img, img)
+
+        # Sea Map
+        sea_img = generate_sea_map(data_dem)
+        output_img = ImageChops.composite(
+            sea_img, output_img, sea_img)
 
         with self.output().open("wb") as output_f:
             output_img.save(output_f, 'PNG')
@@ -544,3 +546,4 @@ class GenerateImageByMeshCodes(luigi.WrapperTask):
 
 if __name__ == "__main__":
     luigi.run()
+
