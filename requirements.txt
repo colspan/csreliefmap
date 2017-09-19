@@ -1,4 +1,4 @@
-pwd
+pwdhash
 requests
 luigi
 pillow
