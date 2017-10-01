@@ -1,4 +1,3 @@
-pwd
 requests
 luigi
 pillow
