@@ -2,6 +2,8 @@
 
 An one stop tile image generator of CS Relief Map written in Python, integrated with [Luigi](https://github.com/spotify/luigi) and [numpy](http://www.numpy.org/).
 
+![Example Image (--x 29016 --y 12938 --z 15)](example.png)
+
 ## What is CS Relief Map (CS立体図) ?
 
 The "*CS Relief Map*" (CS立体図) is a terrain visualization method with high visibility of **C**urvature and **S**lope. This was proposed by [Nagano prefecture forest center (長野県林業総合センター)](https://www.pref.nagano.lg.jp/ringyosogo/).
@@ -30,14 +32,13 @@ python CSReliefMap.py GenerateImageByBounds --west 142.74810791015625 --north 43
 python CSReliefMap.py GenerateImageByBounds --west 139.559326171875 --north 35.77994251888403 --south 35.36217605914681 --east 140.2569580078125 --zoom 15 --workers 4 --local-scheduler
 
 # generate each tile (curvature only)
-python CSReliefMap.py GenerateImageCurvature --x 29139 --y 12936 --z 15 --local-scheduler
+python CSReliefMap.py GenerateImageCurvature --x 29016 --y 12938 --z 15 --local-scheduler
 
 # generate each tile (slope only)
-python CSReliefMap.py GenerateImageSlope --x 29139 --y 12936 --z 15 --local-scheduler
+python CSReliefMap.py GenerateImageSlope --x 29016 --y 12938 --z 15 --local-scheduler
 
 # generate each tile
-python CSReliefMap.py GenerateImageCSReliefMap --x 29139 --y 12936 --z 15 --local-scheduler
-
+python CSReliefMap.py GenerateImageCSReliefMap --x 29016 --y 12938 --z 15 --local-scheduler
 ```
 
 ##### Resizing large image to small image  (experimental)
