@@ -52,7 +52,7 @@ class DownloadTile(luigi.Task):
         output_file = "./var/{}/{}/{}/{}.{}".format(
             self.baseName, self.z, self.x, self.y, extension
         )
-        return luigi.LocalTarget(output_file)
+        return luigi.LocalTarget(output_file, format=luigi.format.Nop)
 
     def run(self):
         """
@@ -87,22 +87,22 @@ class LoadDem(DownloadTile):
 
     def load_data(self):
         tile = np.empty((256, 256))
-        with self.output().open("r") as f:
+        with open(self.output().fn, "r") as f:
             try:
                 for i, line in enumerate(f):
                     tile[i, :] = np.array(
                         [
-                            float(x) if x != "e" else np.NAN
+                            float(x) if x != "e" else np.nan # 水域は np.nan にする
                             for x in line.strip().split(",")
                         ]
                     )
-            except:
-                logging.warn(
-                    "skipping load {} and compensating with `np.NAN`".format(
+            except Exception as e:
+                logging.warning(
+                    "skipping load {} and compensating with `np.nan`".format(
                         self.output().path
                     )
                 )
-                tile[:] = np.NAN
+                tile[:] = np.nan # 水域は np.nan にする
         return tile
 
 
